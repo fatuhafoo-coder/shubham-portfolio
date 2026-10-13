@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shubham Shreshth — Team Leader & Systems Developer | B.Tech EEE & BCA</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400;1,600&family=Syne:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serif: ['"Cormorant Garamond"', 'serif'],
+                        display: ['"Syne"', 'sans-serif'],
+                        sans: ['"Inter"', 'sans-serif'],
+                    },
+                    colors: {
+                        editorial: {
+                            bg: '#0a0812',
+                            card: '#130f21',
+                            text: '#f3eef8',
+                            muted: '#9a8ca8',
+                            border: 'rgba(235, 220, 255, 0.12)',
+                            accent: '#e6c5ff',
+                            rose: '#ffd4e5',
+                            lavender: '#d8b4fe',
+                            mint: '#b5f2e8',
+                            peach: '#ffe3d8'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', sans-serif; background-color: #0a0812; color: #f3eef8; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
+        #glCanvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 0; }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: rgba(10, 8, 18, 0.8); }
+        ::-webkit-scrollbar-thumb { background: rgba(216, 180, 254, 0.3); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(216, 180, 254, 0.6); }
+
+        .glass-panel {
+            background: rgba(20, 15, 33, 0.45);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+        }
+        .glass-pill {
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        #hoverPreviewContainer {
+            position: fixed; pointer-events: none; z-index: 40; width: 320px; height: 420px;
+            border-radius: 16px; overflow: hidden; opacity: 0;
+            transform: translate(-50%, -50%) scale(0.85) rotate(-3deg);
+            transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7); border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+        #hoverPreviewContainer.active { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+        #hoverPreviewImage { width: 100%; height: 100%; object-fit: cover; filter: saturate(125%) contrast(110%); }
+
+        .project-row { transition: all 0.4s ease; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+        .project-row:hover { border-bottom-color: rgba(230, 197, 255, 0.5); padding-left: 1rem; }
+
+        .editorial-title { font-family: 'Cormorant Garamond', serif; font-weight: 300; letter-spacing: -0.02em; }
+        .editorial-sub { font-family: 'Syne', sans-serif; text-transform: uppercase; letter-spacing: 0.15em; }
+
+        .reveal-up { opacity: 0; transform: translateY(40px); transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1), transform 0.9s cubic-bezier(0.16, 1, 0.3, 1); }
+        .reveal-up.revealed { opacity: 1; transform: translateY(0); }
+
+        @keyframes spinSlow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .spin-slow { animation: spinSlow 20s linear infinite; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center relative selection:bg-purple-500 selection:text-white">
+
+    <!-- WebGL Background Canvas -->
+    <canvas id="glCanvas"></canvas>
+
+    <!-- Hover Image Preview Overlay -->
+    <div id="hoverPreviewContainer">
+        <img id="hoverPreviewImage" src="" alt="Project Preview">
+    </div>
+
+    <!-- CLEAN TOP NAVIGATION BAR -->
+    <header class="fixed top-4 z-50 flex items-center justify-between px-6 py-3.5 rounded-full glass-panel max-w-5xl w-[92%] shadow-2xl">
+        <a href="#" class="flex items-center space-x-3 group">
+            <span class="w-2.5 h-2.5 rounded-full bg-editorial-lavender animate-pulse"></span>
+            <span class="editorial-sub text-xs font-bold text-slate-100 tracking-widest group-hover:text-editorial-accent transition-colors">SHUBHAM SHRESHTH</span>
+        </a>
+
+        <div class="flex items-center space-x-6">
+            <a href="#selected-works" class="text-xs font-mono text-slate-300 hover:text-editorial-accent transition-colors hidden sm:inline-block">WORKS</a>
+            <a href="#about-section" class="text-xs font-mono text-slate-300 hover:text-editorial-accent transition-colors hidden sm:inline-block">ABOUT</a>
+            <button onclick="openModal('contactModal')" class="px-4 py-1.5 rounded-full bg-editorial-accent hover:bg-white text-slate-950 font-bold text-xs uppercase tracking-wider transition-all shadow-md">
+                Contact
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <div class="relative z-10 w-full min-h-screen my-auto">
+
+        <main class="w-full min-h-full pt-28 pb-24 px-6 md:px-16 flex flex-col items-center">
+            
+            <!-- HERO SECTION -->
+            <section class="w-full max-w-5xl py-12 md:py-20 flex flex-col items-start justify-center relative reveal-up">
+                <div class="flex flex-wrap items-center justify-between w-full gap-4 mb-8 pb-4 border-b border-white/10">
+                    <div class="flex items-center space-x-2 glass-pill px-3.5 py-1.5 rounded-full text-[11px] font-mono text-slate-300">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                        <span>B.TECH (EEE) & BCA • TEAM LEADER & DEVELOPER</span>
+                    </div>
+                    <div class="flex items-center space-x-4 text-xs font-mono text-editorial-muted">
+                        <span id="localTime">00:00:00 IST</span>
+                        <span>•</span>
+                        <span>PATNA, BIHAR</span>
+                    </div>
+                </div>
+
+                <div class="relative w-full">
+                    <h1 class="editorial-title text-5xl sm:text-7xl md:text-8xl lg:text-9xl leading-[0.9] text-slate-100 mb-6">
+                        Shubham <br>
+                        <span class="italic text-editorial-accent font-light">Shreshth</span>
+                    </h1>
+
+                    <div class="absolute top-0 right-0 hidden lg:flex items-center justify-center w-32 h-32">
+                        <div class="absolute inset-0 spin-slow">
+                            <svg viewBox="0 0 100 100" class="w-full h-full text-slate-400/40 fill-current">
+                                <path id="textPath" d="M 50, 50 m -37, 0 a 37,37 0 1,1 74,0 a 37,37 0 1,1 -74,0" fill="none"/>
+                                <text font-size="9.5" font-family="Syne" letter-spacing="2">
+                                    <textPath href="#textPath">TEAM LEADER • IOT & SYSTEMS •</textPath>
+                                </text>
+                            </svg>
+                        </div>
+                        <i class="fa-solid fa-asterisk text-editorial-lavender text-xl"></i>
+                    </div>
+                </div>
+
+                <p class="text-base sm:text-xl md:text-2xl text-slate-300 font-light max-w-2xl leading-relaxed mb-10 font-sans">
+                    Proactive Team Leader and Technical Developer bridging Electrical & Electronics Engineering, IoT automation, and full-stack software development.
+                </p>
+
+                <div class="flex flex-wrap items-center gap-6 pt-2">
+                    <a href="#selected-works" class="px-7 py-3.5 rounded-full bg-editorial-accent hover:bg-white text-slate-950 font-bold text-xs uppercase tracking-widest transition-all duration-300 shadow-xl hover:scale-105">
+                        View Projects <i class="fa-solid fa-arrow-down-long ml-2"></i>
+                    </a>
+                    <button onclick="openModal('contactModal')" class="px-7 py-3.5 rounded-full glass-panel hover:bg-white/10 text-slate-200 font-semibold text-xs uppercase tracking-widest transition-all duration-300 border border-white/15">
+                        Get In Touch
+                    </button>
+                </div>
+            </section>
+
+            <!-- SELECTED WORKS (PROJECTS) -->
+            <section id="selected-works" class="w-full max-w-5xl py-16 reveal-up">
+                <div class="flex items-end justify-between mb-12 pb-4 border-b border-white/15">
+                    <div>
+                        <span class="editorial-sub text-xs text-editorial-lavender font-bold">01 / PROJECTS & LEADERSHIP</span>
+                        <h2 class="editorial-title text-4xl sm:text-6xl text-slate-100">Featured Works</h2>
+                    </div>
+                    <span class="hidden sm:inline-block text-xs font-mono text-slate-400">[ HOVER TITLE FOR PREVIEW ]</span>
+                </div>
+
+                <div class="space-y-1">
+                    <!-- Project 1 -->
+                    <div class="project-row group py-8 px-2 flex flex-col md:flex-row md:items-center justify-between cursor-pointer"
+                         onmouseenter="showHoverPreview('https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1000&q=80')"
+                         onmouseleave="hideHoverPreview()"
+                         onclick="openProjectDetails(1)">
+                        <div class="flex items-baseline space-x-6">
+                            <span class="text-xs font-mono text-slate-500 group-hover:text-editorial-lavender transition-colors">01</span>
+                            <h3 class="editorial-title text-3xl sm:text-5xl text-slate-200 group-hover:text-white transition-colors">Employee Management System</h3>
+                        </div>
+                        <div class="flex items-center space-x-6 mt-3 md:mt-0 text-xs font-mono text-slate-400">
+                            <span>WEB & ANDROID / MYSQL</span>
+                            <span>2026</span>
+                            <i class="fa-solid fa-arrow-up-right-from-square text-editorial-lavender opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                        </div>
+                    </div>
+
+                    <!-- Project 2 -->
+                    <div class="project-row group py-8 px-2 flex flex-col md:flex-row md:items-center justify-between cursor-pointer"
+                         onmouseenter="showHoverPreview('https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?auto=format&fit=crop&w=1000&q=80')"
+                         onmouseleave="hideHoverPreview()"
+                         onclick="openProjectDetails(2)">
+                        <div class="flex items-baseline space-x-6">
+                            <span class="text-xs font-mono text-slate-500 group-hover:text-editorial-lavender transition-colors">02</span>
+                            <h3 class="editorial-title text-3xl sm:text-5xl text-slate-200 group-hover:text-white transition-colors">Solar Radiation Measurement</h3>
+                        </div>
+                        <div class="flex items-center space-x-6 mt-3 md:mt-0 text-xs font-mono text-slate-400">
+                            <span>ENGINEERING / SENSORS</span>
+                            <span>2025</span>
+                            <i class="fa-solid fa-arrow-up-right-from-square text-editorial-lavender opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                        </div>
+                    </div>
+
+                    <!-- Project 3 -->
+                    <div class="project-row group py-8 px-2 flex flex-col md:flex-row md:items-center justify-between cursor-pointer"
+                         onmouseenter="showHoverPreview('https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1000&q=80')"
+                         onmouseleave="hideHoverPreview()"
+                         onclick="openProjectDetails(3)">
+                        <div class="flex items-baseline space-x-6">
+                            <span class="text-xs font-mono text-slate-500 group-hover:text-editorial-lavender transition-colors">03</span>
+                            <h3 class="editorial-title text-3xl sm:text-5xl text-slate-200 group-hover:text-white transition-colors">Air Quality IoT Suite</h3>
+                        </div>
+                        <div class="flex items-center space-x-6 mt-3 md:mt-0 text-xs font-mono text-slate-400">
+                            <span>ESP32 / BLYNK IOT</span>
+                            <span>2025</span>
+                            <i class="fa-solid fa-arrow-up-right-from-square text-editorial-lavender opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- INTERNSHIPS & EXPERIENCE -->
+            <section class="w-full max-w-5xl py-16 reveal-up">
+                <div class="flex items-end justify-between mb-10 pb-4 border-b border-white/15">
+                    <div>
+                        <span class="editorial-sub text-xs text-editorial-lavender font-bold">02 / FIELD TRAINING</span>
+                        <h2 class="editorial-title text-4xl sm:text-6xl text-slate-100">Professional Internships</h2>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="glass-panel p-6 rounded-3xl group hover:border-editorial-accent/40 transition-all duration-500">
+                        <span class="editorial-sub text-[10px] text-editorial-lavender">4 WEEKS</span>
+                        <h4 class="editorial-title text-2xl text-slate-100 mt-2">NTPC, Barh</h4>
+                        <p class="text-xs text-slate-300 mt-2 font-sans">Thermal power plant electrical operations and transmission training.</p>
+                    </div>
+
+                    <div class="glass-panel p-6 rounded-3xl group hover:border-editorial-accent/40 transition-all duration-500">
+                        <span class="editorial-sub text-[10px] text-editorial-lavender">4 WEEKS</span>
+                        <h4 class="editorial-title text-2xl text-slate-100 mt-2">PESU, SBPDCL, Patna</h4>
+                        <p class="text-xs text-slate-300 mt-2 font-sans">Power distribution systems, grid management, and substation operations.</p>
+                    </div>
+
+                    <div class="glass-panel p-6 rounded-3xl group hover:border-editorial-accent/40 transition-all duration-500">
+                        <span class="editorial-sub text-[10px] text-editorial-lavender">6 WEEKS</span>
+                        <h4 class="editorial-title text-2xl text-slate-100 mt-2">NBPDCL, Begusarai</h4>
+                        <p class="text-xs text-slate-300 mt-2 font-sans">North Bihar electrical distribution network and transformer maintenance.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ABOUT & PHILOSOPHY -->
+            <section id="about-section" class="w-full max-w-5xl py-16 reveal-up">
+                <div class="glass-panel rounded-3xl p-8 sm:p-12 relative overflow-hidden border border-white/10">
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                        <div class="lg:col-span-7 space-y-6">
+                            <span class="editorial-sub text-xs text-editorial-lavender font-bold">03 / BACKGROUND & SKILLS</span>
+                            <h2 class="editorial-title text-4xl sm:text-5xl text-slate-100 leading-tight">
+                                Dual-degree grounding in engineering and software.
+                            </h2>
+                            <p class="text-sm text-slate-300 leading-relaxed font-sans">
+                                Holding a B.Tech in Electrical & Electronics Engineering from Nalanda College of Engineering (6.82 CGPA) and a BCA from Manipal University Jaipur (8.59 CGPA). I combine hardware troubleshooting with robust software development, team management, and client interaction.
+                            </p>
+                            
+                            <div class="flex flex-wrap gap-2 pt-2">
+                                <span class="glass-pill px-3.5 py-1.5 rounded-full text-xs text-editorial-accent font-mono">Team Leadership</span>
+                                <span class="glass-pill px-3.5 py-1.5 rounded-full text-xs text-editorial-accent font-mono">C / C++ / Python / Java</span>
+                                <span class="glass-pill px-3.5 py-1.5 rounded-full text-xs text-editorial-accent font-mono">HTML / CSS / JavaScript</span>
+                                <span class="glass-pill px-3.5 py-1.5 rounded-full text-xs text-editorial-accent font-mono">ESP32 & IoT</span>
+                                <span class="glass-pill px-3.5 py-1.5 rounded-full text-xs text-editorial-accent font-mono">MATLAB & LTspice</span>
+                            </div>
+                        </div>
+
+                        <!-- Portrait Image -->
+                        <div class="lg:col-span-5 flex justify-center">
+                            <div class="relative w-64 h-80 rounded-2xl overflow-hidden glass-panel p-2 transform rotate-2 hover:rotate-0 transition-transform duration-500">
+                                <img src="WhatsApp Image 2026-10-14 at 01.19.49.jpeg" alt="Shubham Shreshth Portrait" class="w-full h-full object-cover rounded-xl filter grayscale contrast-125 hover:grayscale-0 transition-all duration-700">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CONTACT & FOOTER -->
+            <section class="w-full max-w-5xl py-20 flex flex-col items-center text-center reveal-up">
+                <span class="editorial-sub text-xs text-editorial-lavender font-bold mb-4">04 / INQUIRIES</span>
+                <h2 class="editorial-title text-5xl sm:text-7xl md:text-8xl text-slate-100 mb-8">
+                    Let's Connect <br>
+                    <span class="italic text-editorial-accent">& Collaborate</span>
+                </h2>
+
+                <button onclick="openModal('contactModal')" class="px-10 py-5 rounded-full bg-slate-100 hover:bg-editorial-accent text-slate-950 font-bold text-xs uppercase tracking-widest transition-all duration-300 shadow-2xl hover:scale-105">
+                    Start a Conversation <i class="fa-solid fa-paper-plane ml-2"></i>
+                </button>
+
+                <div class="flex items-center space-x-6 mt-16">
+                    <a href="https://www.linkedin.com/in/shubham-shreshth-2a0938427" target="_blank" class="text-slate-400 hover:text-editorial-accent text-sm font-mono transition-colors">LINKEDIN</a>
+                    <a href="mailto:shubhamshreshth29@gmail.com" class="text-slate-400 hover:text-editorial-accent text-sm font-mono transition-colors">EMAIL</a>
+                    <span class="text-slate-400 text-sm font-mono">+91-8210233202</span>
+                </div>
+
+                <p class="text-xs font-mono text-slate-500 mt-12">© 2026 SHUBHAM SHRESHTH • ALL RIGHTS RESERVED</p>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- CONTACT MODAL -->
+    <div id="contactModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-xl opacity-0 pointer-events-none transition-all duration-500 p-4">
+        <div class="glass-panel rounded-3xl p-8 max-w-md w-full relative shadow-2xl border border-white/20 transform scale-95 transition-all">
+            <button onclick="closeModal('contactModal')" class="absolute top-5 right-5 text-slate-400 hover:text-white bg-white/10 w-8 h-8 rounded-full flex items-center justify-center">✕</button>
+
+            <span class="editorial-sub text-[10px] text-editorial-lavender">INITIATE CONTACT</span>
+            <h3 class="editorial-title text-4xl text-slate-100 mb-6">Get In Touch</h3>
+
+            <!-- Web3Forms Enabled Form -->
+            <form action="https://api.web3forms.com/submit" method="POST" class="space-y-4 font-sans">
+                <!-- Web3Forms Access Key -->
+                <input type="hidden" name="access_key" value="b66d9da7-2ca1-4d02-a949-7e1a23608035">
+
+                <div>
+                    <label class="block text-xs font-mono text-slate-300 mb-1">YOUR NAME</label>
+                    <input type="text" name="name" required placeholder="Recruiter / Collaborator" class="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/15 text-white placeholder-slate-500 text-xs focus:outline-none focus:ring-2 focus:ring-editorial-accent">
+                </div>
+                <div>
+                    <label class="block text-xs font-mono text-slate-300 mb-1">EMAIL ADDRESS</label>
+                    <input type="email" name="email" required placeholder="name@company.com" class="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/15 text-white placeholder-slate-500 text-xs focus:outline-none focus:ring-2 focus:ring-editorial-accent">
+                </div>
+                <div>
+                    <label class="block text-xs font-mono text-slate-300 mb-1">MESSAGE</label>
+                    <textarea name="message" rows="4" required placeholder="Discuss an opportunity or project..." class="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/15 text-white placeholder-slate-500 text-xs focus:outline-none focus:ring-2 focus:ring-editorial-accent"></textarea>
+                </div>
+
+                <button type="submit" class="w-full py-4 rounded-xl bg-editorial-accent text-slate-950 font-bold text-xs uppercase tracking-widest hover:bg-white transition-colors shadow-lg">
+                    Send Message
+                </button>
+            </form>
+
+            <div id="contactToast" class="hidden mt-4 p-3 rounded-xl bg-emerald-500/20 border border-emerald-400/40 text-emerald-200 text-xs text-center font-mono">
+                ✨ Message transmitted successfully!
+            </div>
+        </div>
+    </div>
+
+    <!-- PROJECT DETAIL MODAL -->
+    <div id="projectModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-xl opacity-0 pointer-events-none transition-all duration-500 p-4">
+        <div class="glass-panel rounded-3xl p-6 sm:p-8 max-w-lg w-full relative shadow-2xl border border-white/20 transform scale-95 transition-all">
+            <button onclick="closeModal('projectModal')" class="absolute top-5 right-5 text-slate-400 hover:text-white bg-white/10 w-8 h-8 rounded-full flex items-center justify-center z-10">✕</button>
+            <div id="modalContent" class="space-y-4"></div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('glCanvas');
+        let renderer, scene, camera, material, mesh;
+
+        let scrollVelocity = 0;
+        let lastScrollTop = 0;
+        const mouse = new THREE.Vector2(0.5, 0.5);
+        const targetMouse = new THREE.Vector2(0.5, 0.5);
+
+        const fragmentShader = `
+            uniform vec2 u_resolution;
+            uniform vec2 u_mouse;
+            uniform float u_time;
+            uniform float u_scroll_vel;
+
+            vec3 permute(vec3 x) { return mod(((x*34.0)+1.0)*x, 289.0); }
+            float snoise(vec2 v){
+                const vec4 C = vec4(0.211324865405187, 0.366025403784439, -0.577350269189626, 0.024390243902439);
+                vec2 i  = floor(v + dot(v, C.yy) );
+                vec2 x0 = v -   i + dot(i, C.xx);
+                vec2 i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
+                vec4 x12 = x0.xyxy + C.xxzz;
+                x12.xy -= i1;
+                i = mod(i, 289.0);
+                vec3 p = permute( permute( i.y + vec3(0.0, i1.y, 1.0 )) + i.x + vec3(0.0, i1.x, 1.0 ));
+                vec3 m = max(0.5 - vec3(dot(x0,x0), dot(x12.xy,x12.xy), dot(x12.zw,x12.zw)), 0.0);
+                m = m*m; m = m*m;
+                vec3 x = 2.0 * fract(p * C.www) - 1.0;
+                vec3 h = abs(x) - 0.5;
+                vec3 ox = floor(x + 0.5);
+                vec3 a0 = x - ox;
+                m *= 1.79284291400159 - 0.85373472095314 * ( a0*a0 + h*h );
+                vec3 g;
+                g.x  = a0.x  * x0.x  + h.x  * x0.y;
+                g.yz = a0.yz * x12.xz + h.yz * x12.yw;
+                return 130.0 * dot(m, g);
+            }
+
+            void main() {
+                vec2 st = gl_FragCoord.xy / u_resolution.xy;
+                st.x *= u_resolution.x / u_resolution.y;
+                vec2 m = u_mouse;
+                m.x *= u_resolution.x / u_resolution.y;
+
+                vec2 dir = st - m;
+                float dist = length(dir) + 0.001;
+                float angle = atan(dir.y, dir.x);
+                float swirl = sin(dist * 3.5 - u_time * 0.8) + (u_scroll_vel * 0.2);
+                angle += swirl / (dist * 2.5);
+
+                vec2 uvSwirled = m + vec2(cos(angle), sin(angle)) * dist;
+                float n1 = snoise(uvSwirled * 1.8 + vec2(u_time * 0.15));
+                float n2 = snoise(uvSwirled * 3.5 - vec2(u_time * 0.25 + n1));
+                float n3 = snoise(st * 2.0 + vec2(n2 * 0.85));
+
+                vec3 c1 = vec3(0.19, 0.06, 0.26);
+                vec3 c2 = vec3(0.57, 0.20, 0.91);
+                vec3 c3 = vec3(0.95, 0.44, 0.71);
+                vec3 c4 = vec3(0.17, 0.83, 0.74);
+
+                vec3 col = mix(c1, c2, clamp(n1 + 0.5, 0.0, 1.0));
+                col = mix(col, c3, clamp(n2 + 0.3, 0.0, 1.0));
+                col = mix(col, c4, clamp(n3 * 0.8, 0.0, 1.0));
+
+                float vignette = smoothstep(1.5, 0.2, length(st - vec2(0.5 * u_resolution.x / u_resolution.y, 0.5)));
+                col *= vignette * 0.85;
+
+                gl_FragColor = vec4(col, 1.0);
+            }
+        `;
+
+        function initWebGL() {
+            scene = new THREE.Scene();
+            camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+            renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+            const geometry = new THREE.PlaneGeometry(2, 2);
+            material = new THREE.ShaderMaterial({
+                vertexShader: `void main() { gl_Position = vec4(position, 1.0); }`,
+                fragmentShader: fragmentShader,
+                uniforms: {
+                    u_resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+                    u_mouse: { value: new THREE.Vector2(0.5, 0.5) },
+                    u_time: { value: 0 },
+                    u_scroll_vel: { value: 0 }
+                }
+            });
+
+            mesh = new THREE.Mesh(geometry, material);
+            scene.add(mesh);
+        }
+
+        let clock = new THREE.Clock();
+        function animateShader() {
+            requestAnimationFrame(animateShader);
+            const elapsedTime = clock.getElapsedTime() * 1.8;
+            mouse.x += (targetMouse.x - mouse.x) * 0.05;
+            mouse.y += (targetMouse.y - mouse.y) * 0.05;
+            scrollVelocity *= 0.92;
+
+            material.uniforms.u_time.value = elapsedTime;
+            material.uniforms.u_mouse.value.set(mouse.x, mouse.y);
+            material.uniforms.u_scroll_vel.value = scrollVelocity;
+            renderer.render(scene, camera);
+        }
+
+        const hoverPreview = document.getElementById('hoverPreviewContainer');
+        const hoverImage = document.getElementById('hoverPreviewImage');
+
+        function showHoverPreview(imgUrl) {
+            hoverImage.src = imgUrl;
+            hoverPreview.classList.add('active');
+        }
+        function hideHoverPreview() {
+            hoverPreview.classList.remove('active');
+        }
+
+        window.addEventListener('mousemove', (e) => {
+            targetMouse.x = e.clientX / window.innerWidth;
+            targetMouse.y = 1.0 - (e.clientY / window.innerHeight);
+            hoverPreview.style.left = e.clientX + 'px';
+            hoverPreview.style.top = e.clientY + 'px';
+        });
+
+        window.addEventListener('scroll', () => {
+            const st = window.pageYOffset || document.documentElement.scrollTop;
+            const delta = st - lastScrollTop;
+            scrollVelocity = Math.min(Math.max(delta * 0.2, -10), 10);
+            lastScrollTop = st;
+            checkScrollReveals();
+        });
+
+        function checkScrollReveals() {
+            document.querySelectorAll('.reveal-up').forEach(el => {
+                const rect = el.getBoundingClientRect();
+                if (rect.top < window.innerHeight - 100) el.classList.add('revealed');
+            });
+        }
+
+        function updateLiveClock() {
+            const now = new Date();
+            const options = { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+            document.getElementById('localTime').innerText = new Intl.DateTimeFormat('en-US', options).format(now) + ' IST';
+        }
+        setInterval(updateLiveClock, 1000);
+        updateLiveClock();
+
+        function openModal(id) {
+            const modal = document.getElementById(id);
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.firstElementChild.classList.remove('scale-95');
+            modal.firstElementChild.classList.add('scale-100');
+        }
+        function closeModal(id) {
+            const modal = document.getElementById(id);
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modal.firstElementChild.classList.remove('scale-100');
+            modal.firstElementChild.classList.add('scale-95');
+        }
+
+        const projectDetailsData = {
+            1: {
+                title: "Employee Management System",
+                category: "WEB & ANDROID / MYSQL",
+                image: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1200&q=80",
+                desc: "Led a 4-member team as Team Leader & Developer. Built a comprehensive employee management system handling records, attendance, and salary management using HTML, CSS, JavaScript, and MySQL.",
+                tags: ["HTML/CSS/JS", "MySQL", "Team Leadership", "Android"]
+            },
+            2: {
+                title: "Solar Radiation Measurement",
+                category: "ENGINEERING / SENSORS",
+                image: "https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?auto=format&fit=crop&w=1200&q=80",
+                desc: "Led project activities including component selection, circuit development, sensor interfacing, testing, and calibration for precise solar radiation monitoring.",
+                tags: ["Circuit Design", "Sensors", "Calibration", "Engineering"]
+            },
+            3: {
+                title: "Air Quality IoT Suite",
+                category: "ESP32 / BLYNK IOT",
+                image: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80",
+                desc: "Team Leader & System Integrator for an ESP32-based air quality monitoring system utilizing MQ135 and DHT11 sensors with real-time Blynk IoT cloud data tracking.",
+                tags: ["ESP32", "MQ135", "DHT11", "Blynk IoT"]
+            }
+        };
+
+        function openProjectDetails(id) {
+            const data = projectDetailsData[id];
+            if (!data) return;
+            document.getElementById('modalContent').innerHTML = `
+                <div class="relative h-56 rounded-2xl overflow-hidden mb-4 border border-white/10">
+                    <img src="${data.image}" alt="${data.title}" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent"></div>
+                    <div class="absolute bottom-4 left-4 right-4">
+                        <span class="editorial-sub text-[10px] text-editorial-lavender font-bold">${data.category}</span>
+                        <h3 class="editorial-title text-3xl text-white">${data.title}</h3>
+                    </div>
+                </div>
+                <p class="text-xs text-slate-300 font-sans leading-relaxed">${data.desc}</p>
+                <div class="flex flex-wrap gap-2 pt-2">
+                    ${data.tags.map(tag => `<span class="glass-pill px-3 py-1 rounded-full text-[10px] font-mono text-editorial-accent">${tag}</span>`).join('')}
+                </div>
+                <div class="pt-4">
+                    <button onclick="closeModal('projectModal')" class="w-full py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-mono text-xs transition-colors">
+                        CLOSE SHOWCASE
+                    </button>
+                </div>
+            `;
+            openModal('projectModal');
+        }
+
+        window.addEventListener('resize', () => {
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            material.uniforms.u_resolution.value.set(window.innerWidth, window.innerHeight);
+        });
+
+        window.onload = function() {
+            initWebGL();
+            animateShader();
+            checkScrollReveals();
+        };
+    </script>
+</body>
+</html>
